@@ -184,10 +184,10 @@ jobs:
     - name: Check Test Results
       run: |
         if [ "${{ needs.test.result }}" == "success" ]; then
-          echo "✅ Todas las pruebas pasaron correctamente"
+          echo "Todas las pruebas pasaron correctamente"
           exit 0
         else
-          echo "⚠️ Algunas pruebas tuvieron problemas"
+          echo "Algunas pruebas tuvieron problemas"
           exit 0
         fi
       continue-on-error: true

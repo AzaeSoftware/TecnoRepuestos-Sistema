@@ -9,7 +9,7 @@ describe('API de Productos - Integración', () => {
   
   // Limpiar antes de cada prueba
   beforeEach(async () => {
-    // Aquí irían las limpiezas de BD si la tuvieras conectada
+    // Aquí irían las limpiezas de BD si la tuviera conectada
     console.log('Preparando prueba...');
   });
   
