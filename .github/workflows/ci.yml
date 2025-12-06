@@ -1,0 +1,190 @@
+name: CI - Pruebas y Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: tecnorepuestos_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    # 1. Descargar el código del repositorio
+    - uses: actions/checkout@v3
+    
+    # 2. Configurar Node.js
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    # 3. Instalar dependencias (Backend)
+    - name: Install Backend Dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    # 4. Configurar variables de entorno para tests
+    - name: Create .env file for tests
+      working-directory: ./backend
+      run: |
+        echo "DB_HOST=localhost" > .env
+        echo "DB_PORT=5432" >> .env
+        echo "DB_USER=postgres" >> .env
+        echo "DB_PASSWORD=postgres" >> .env
+        echo "DB_NAME=tecnorepuestos_test" >> .env
+        echo "NODE_ENV=test" >> .env
+        echo "JWT_SECRET=test_secret_key" >> .env
+        echo "API_PORT=3000" >> .env
+    
+    # 5. Ejecutar migraciones de BD (si tienes)
+    - name: Run Database Migrations
+      working-directory: ./backend
+      run: npm run migrate
+      continue-on-error: true
+    
+    # 6. Ejecutar pruebas unitarias
+    - name: Run Unit Tests
+      working-directory: ./backend
+      run: npm run test:unit
+    
+    # 7. Ejecutar pruebas de integración
+    - name: Run Integration Tests
+      working-directory: ./backend
+      run: npm run test:integration
+    
+    # 8. Generar reporte de cobertura
+    - name: Generate Coverage Report
+      working-directory: ./backend
+      run: npm run test:coverage
+      continue-on-error: true
+    
+    # 9. Subir reporte de cobertura a Codecov (opcional)
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/coverage-final.json
+        flags: unittests
+        name: codecov-umbrella
+      continue-on-error: true
+    
+    # 10. Instalar dependencias (Frontend)
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    # 11. Build del Frontend
+    - name: Build Frontend
+      working-directory: ./frontend
+      run: npm run build
+    
+    # 12. Linting Backend (Opcional)
+    - name: Run Backend Linter
+      working-directory: ./backend
+      run: npm run lint
+      continue-on-error: true
+    
+    # 13. Linting Frontend (Opcional)
+    - name: Run Frontend Linter
+      working-directory: ./frontend
+      run: npm run lint
+      continue-on-error: true
+
+  # Job para pruebas E2E (opcional)
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    if: success()
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+    
+    # Backend
+    - name: Install Backend Dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Create .env for E2E
+      working-directory: ./backend
+      run: |
+        echo "DB_HOST=localhost" > .env
+        echo "DB_PORT=5432" >> .env
+        echo "DB_USER=postgres" >> .env
+        echo "DB_PASSWORD=postgres" >> .env
+        echo "DB_NAME=tecnorepuestos_test" >> .env
+        echo "NODE_ENV=test" >> .env
+        echo "JWT_SECRET=test_secret_key" >> .env
+        echo "API_PORT=3000" >> .env
+    
+    - name: Start Backend Server
+      working-directory: ./backend
+      run: npm start &
+      env:
+        NODE_ENV: test
+    
+    - name: Wait for Backend
+      run: sleep 5
+    
+    # Frontend
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Build Frontend
+      working-directory: ./frontend
+      run: npm run build
+    
+    - name: Install Playwright
+      working-directory: ./frontend
+      run: npm install --save-dev @playwright/test
+      continue-on-error: true
+    
+    - name: Run E2E Tests
+      working-directory: ./frontend
+      run: npm run test:e2e
+      continue-on-error: true
+
+  # Job para notificaciones (opcional)
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, e2e]
+    if: always()
+    
+    steps:
+    - name: Check Test Results
+      run: |
+        if [ "${{ needs.test.result }}" == "success" ]; then
+          echo "Todas las pruebas pasaron correctamente"
+          exit 0
+        else
+          echo "Algunas pruebas fallaron"
+          exit 1
+        fi
+      continue-on-error: true
