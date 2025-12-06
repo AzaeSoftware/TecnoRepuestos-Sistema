@@ -2,7 +2,8 @@
 Practica de Gestión De La Configuración Del Software.    Sistema integral de gestión de inventario, compras y ventas para TecnoRepuestos S.A. Incluye módulos de productos, compras, ventas, inventario y portal del cliente.
 
 # TecnoRepuestos S.A. - Sistema de Gestión
-
+[![CI](https://github.com/AzaeSoftware/TecnoRepuestos-Sistema/workflows/CI/badge.svg)](https://github.com/AzaeSoftware/TecnoRepuestos-Sistema/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/AzaeSoftware/TecnoRepuestos-Sistema)](https://codecov.io/gh/AzaeSoftware/TecnoRepuestos-Sistema)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-v18-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)

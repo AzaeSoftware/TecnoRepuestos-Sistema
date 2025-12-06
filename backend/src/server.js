@@ -1,8 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,10 +9,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Routes (por agregar)
+// Routes (por implementar después)
 // app.use('/api/productos', productRoutes);
 // app.use('/api/compras', purchaseRoutes);
-// app.use('/api/ventas', saleRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -27,7 +24,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Exportar la app para pruebas
+module.exports = app;
+
+// Iniciar servidor solo si se ejecuta directamente
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
